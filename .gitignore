@@ -1,0 +1,8 @@
+### IDE
+.idea/
+.vscode/
+
+### BUILD
+node_modules/
+package-lock.json
+pnpm-lock.yaml
