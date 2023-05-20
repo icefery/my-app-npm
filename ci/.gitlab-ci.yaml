@@ -1,11 +1,11 @@
 variables:
   # 镜像注册表
-  IMAGE_REGISTRY_NAME: core.harbor.dev.icefery.xyz
+  IMAGE_REGISTRY_NAME: harbor.demo.icefery.xyz
   IMAGE_REGISTRY_USERNAME: admin
   IMAGE_REGISTRY_PASSWORD: admin
   # 图表仓库
   CHART_REPO_NAME: icefery
-  CHART_REPO_URL: http://core.harbor.dev.icefery.xyz/chartrepo/icefery
+  CHART_REPO_URL: http://harbor.demo.icefery.xyz/chartrepo/icefery
   CHART_REPO_USERNAME: admin
   CHART_REPO_PASSWORD: admin
   # 应用
@@ -20,7 +20,7 @@ stages:
 build-docker-image:
   stage: build
   tags:
-    # 选择执行器为 Shell 并且可以执行 nerdctl 命令的 GitLab Runner 执行任务 
+    # 选择执行器为 Shell 并且可以执行 nerdctl 命令的 GitLab Runner 执行任务
     - executor=shell
     - command=nerdctl
   before_script:
@@ -28,11 +28,11 @@ build-docker-image:
     - source /etc/custom.sh
   script:
     # 构建镜像
-    - nerdctl build -t ${IMAGE_REGISTRY_NAME}/${APP_GROUP}/${APP_NAME}:${APP_VERSION} --platform linux/amd64,linux/arm64 .
+    - nerdctl build --tag ${IMAGE_REGISTRY_NAME}/${APP_GROUP}/${APP_NAME}:${APP_VERSION} --file ci/Dockerfile --platform linux/amd64,linux/arm64 .
     # 登录镜像注册表
     - nerdctl login http://${IMAGE_REGISTRY_NAME} --username ${IMAGE_REGISTRY_USERNAME} --password ${IMAGE_REGISTRY_PASSWORD}
     # 推送镜像
-    - nerdctl push ${IMAGE_REGISTRY_NAME}/${APP_GROUP}/${APP_NAME}:${APP_VERSION} --all-platforms 
+    - nerdctl push ${IMAGE_REGISTRY_NAME}/${APP_GROUP}/${APP_NAME}:${APP_VERSION} --all-platforms
 
 build-helm-chart:
   stage: build
@@ -40,11 +40,11 @@ build-helm-chart:
     - executor=shell
     - command=helm
   before_script:
-    - source /etc/custom.sh
+    - source /etc/profile.d/ci.sh
     - mkdir -p artifacts
   script:
     # 添加图表仓库
-    - helm repo add ${CHART_REPO_NAME} ${CHART_REPO_URL} --username=${CHART_REPO_USERNAME} --password=${CHART_REPO_PASSWORD} || echo "忽略错误"
+    - helm repo add ${CHART_REPO_NAME} ${CHART_REPO_URL} --username=${CHART_REPO_USERNAME} --password=${CHART_REPO_PASSWORD} 2> /dev/null
     # 推送图表
     - helm cm-push chart/ ${CHART_REPO_NAME}
     # 导出图表
@@ -59,11 +59,10 @@ deploy-to-kubernetes:
     - executor=shell
     - command=helm
   before_script:
-    - source /etc/custom.sh
+    - source /etc/profile.d/ci.sh
   script:
-    - echo "$(whoami)"
     # 卸载
-    - helm uninstall ${APP_NAME} --namespace ${APP_GROUP} || echo "忽略错误"
+    - helm uninstall ${APP_NAME} --namespace ${APP_GROUP} 2> /dev/null
     # 更新
     - helm repo update
     # 安装

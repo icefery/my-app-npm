@@ -1,7 +1,7 @@
-const http = require('http')
-const https = require('https')
-const fs = require('fs')
-const path = require('path')
+const http = require('node:http')
+const https = require('node:https')
+const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 
 const app = express()
@@ -13,7 +13,7 @@ http.createServer(app).listen(httpPort, () => console.log(`Listening on :${httpP
 
 const httpsPort = 8443
 const options = {
-  key: fs.readFileSync(path.join(__dirname, './certs/domain.key')),
-  cert: fs.readFileSync(path.join(__dirname, './certs/domain.crt'))
+  key: fs.readFileSync(path.join(__dirname, '../certs/domain.key')),
+  cert: fs.readFileSync(path.join(__dirname, '../certs/domain.crt'))
 }
 https.createServer(options, app).listen(httpsPort, () => console.log(`Listening on :${httpsPort}`))

@@ -1,0 +1,87 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "charts.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "charts.selectorLabels" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  {{- end }}
+  {{- if and (eq .Values.service.type "LoadBalancer") .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.service.ports.http }}
+      targetPort: http
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePorts.http }}
+      nodePort: {{ .Values.service.nodePorts.http }}
+      {{- end }}
+    - name: https
+      protocol: TCP
+      port: {{ .Values.service.ports.https }}
+      targetPort: https
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePorts.http }}
+      nodePort: {{ .Values.service.nodePorts.https }}
+      {{- end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "charts.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "charts.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "charts.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: {{ .Values.service.ports.http }}
+            - name: https
+              protocol: TCP
+              containerPort: {{ .Values.service.ports.https }}
+
+---
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "charts.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hosts.http }}
+  rules:
+    - host: {{ .Values.ingress.hosts.http }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  number: {{ .Values.service.ports.http }}
+{{- end -}}

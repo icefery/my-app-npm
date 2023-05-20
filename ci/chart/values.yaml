@@ -1,0 +1,22 @@
+image:
+  repository: ghcr.io/icefery/my-app-npm
+  pullPolicy: IfNotPresent
+  tag: 0.0.1
+
+service:
+  type: LoadBalancer
+  clusterIP:
+  loadBalancerIP:
+  ports:
+    http: 8080
+    https: 8443
+  nodePorts:
+    http: 8080
+    https: 8443
+
+ingress:
+  enabled: false
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+  hosts:
+    http: my-app-npm.demo.icefery.xyz

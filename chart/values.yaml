@@ -1,7 +1,0 @@
-image:
-  repository: core.harbor.dev.icefery.xyz/icefery/my-app-npm
-  pullPolicy: IfNotPresent
-  tag: 0.0.1
-
-ingress:
-  host: my-app-npm.dev.icefery.xyz
